@@ -8,13 +8,7 @@ import java.math.BigDecimal;
 @Data
 @Builder
 public class Product {
-
     private String productId;
-
     private String productUnit;
-
     private BigDecimal productUnitPrice;
-
-    private int quantity;
-
 }
