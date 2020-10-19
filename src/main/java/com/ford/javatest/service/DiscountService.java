@@ -6,6 +6,7 @@ import com.ford.javatest.repos.DiscountRepo;
 import com.ford.javatest.util.DiscountUtils;
 import lombok.AllArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @AllArgsConstructor
@@ -20,10 +21,22 @@ public class DiscountService {
                             List<Discount> discountList =
                                     discountRepo
                                             .getDiscountByProductId(product.getProductId());
-                            discountList.forEach(
-                                    discount ->
-                                            DiscountUtils.discountMappers.get(discount.getClass())
-                                                    .accept(shoppingCart, discount));
+                            discountList.stream()
+                                    .filter(discount ->
+                                            isDiscountValid(shoppingCart.getCheckoutDate(),
+                                                    discount.getStartDate(),
+                                                    discount.getEndDate()))
+                                    .forEach(
+                                            discount ->
+                                                    DiscountUtils.discountMappers.get(discount.getClass())
+                                                            .accept(shoppingCart, discount));
                         });
+    }
+
+    private boolean isDiscountValid(LocalDate checkoutDate,
+                                    LocalDate discountStartDate,
+                                    LocalDate discountEndDate) {
+        return (checkoutDate.isEqual(discountStartDate) || checkoutDate.isAfter(discountStartDate)) &&
+                (checkoutDate.isEqual(discountEndDate) || checkoutDate.isBefore(discountEndDate));
     }
 }

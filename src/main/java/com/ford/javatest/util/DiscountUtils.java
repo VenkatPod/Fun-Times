@@ -82,8 +82,21 @@ public class DiscountUtils {
 
     private static BiConsumer<ShoppingCart, Discount> percentageDiscount() {
         return (shoppingCart, discount) -> {
-            System.out.println(shoppingCart.getCart());
-            System.out.println(discount);
+            Product discountProduct = shoppingCart.getCart().keySet().stream()
+                    .filter(product -> product.getProductId().equalsIgnoreCase(discount.getDiscountedProductId()))
+                    .findFirst()
+                    .get();
+            ProductQuantityAndPrice discountProductQuaityAndPrice = shoppingCart.getCart().get(discountProduct);
+            BigDecimal totalPrice = getTotalPrice(
+                    discountProductQuaityAndPrice.getQuantity(),
+                    discountProduct.getProductUnitPrice());
+            BigDecimal disCountedPrice = totalPrice
+                    .multiply(((PercentageDiscount) discount).getDiscountPercentage())
+                    .divide(BigDecimal.valueOf(100));
+            discountProductQuaityAndPrice.setTotalPrice(
+                    getTotalPrice(
+                            discountProductQuaityAndPrice.getQuantity(),
+                            discountProduct.getProductUnitPrice()).subtract(disCountedPrice));
         };
     }
 }

@@ -2,20 +2,28 @@ package com.ford.javatest.service;
 
 import com.ford.javatest.modal.Product;
 import com.ford.javatest.modal.ShoppingCart;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ShoppingCartServiceTest {
 
-    private ShoppingCartService shoppingCartService = new ShoppingCartService();
+    private ShoppingCartService shoppingCartService;
+    private ShoppingCart shoppingCart;
+
+    @BeforeEach
+    public void setup() {
+        shoppingCartService = new ShoppingCartService();
+        shoppingCart = new ShoppingCart(new HashMap<>(), BigDecimal.ZERO, LocalDate.now());
+    }
 
     @Test
     public void addProductToCart_givenAdding6SameProduct_shouldAddProductCorrectly() {
-        ShoppingCart shoppingCart = new ShoppingCart(new HashMap<>(), BigDecimal.ZERO);
         Product apple = Product
                 .builder()
                 .productId("Apple")
@@ -28,7 +36,6 @@ public class ShoppingCartServiceTest {
 
     @Test
     public void addProductToCart_givenAdding6DifferentProduct_shouldAddProductCorrectly() {
-        ShoppingCart shoppingCart = new ShoppingCart(new HashMap<>(), BigDecimal.ZERO);
         Product apple = Product
                 .builder()
                 .productId("Apple")
@@ -50,7 +57,6 @@ public class ShoppingCartServiceTest {
 
     @Test
     public void addProductToCart_givenAddingAlreadyAddedProduct_shouldNotDuplicate() {
-        ShoppingCart shoppingCart = new ShoppingCart(new HashMap<>(), BigDecimal.ZERO);
         Product apple_1 = Product
                 .builder()
                 .productId("Apple")

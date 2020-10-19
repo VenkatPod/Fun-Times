@@ -1,13 +1,12 @@
 package com.ford.javatest.service;
 
-import com.ford.javatest.modal.CombinationDiscount;
-import com.ford.javatest.modal.Product;
-import com.ford.javatest.modal.ProductQuantityAndPrice;
-import com.ford.javatest.modal.ShoppingCart;
+import com.ford.javatest.modal.*;
 import com.ford.javatest.repos.DiscountRepo;
+import com.ford.javatest.util.DiscountUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -17,6 +16,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,14 +25,14 @@ class DiscountServiceTest {
     @Mock
     private DiscountRepo discountRepo;
 
+    @InjectMocks
     private DiscountService discountService;
 
     private ShoppingCart shoppingCart;
 
     @BeforeEach
     public void setup() {
-        discountService = new DiscountService(discountRepo);
-        shoppingCart = new ShoppingCart(new HashMap<>(), BigDecimal.ZERO);
+        shoppingCart = new ShoppingCart(new HashMap<>(), BigDecimal.ZERO, LocalDate.now());
     }
 
     @Test
@@ -119,6 +119,69 @@ class DiscountServiceTest {
         discountService.applyDiscount(shoppingCart);
         assertEquals(BigDecimal.valueOf(1.30).setScale(2), shoppingCart.getCart().get(soup).getTotalPrice());
         assertEquals(BigDecimal.valueOf(1.20), shoppingCart.getCart().get(bread).getTotalPrice());
+    }
+
+    @Test
+    public void applyDiscount_givenPercentageDiscount_shouldApplyDiscountToCart() {
+        when(discountRepo.getDiscountByProductId("Apple")).thenReturn(Arrays.asList(
+                PercentageDiscount.builder()
+                        .discountedProductId("Apple")
+                        .startDate(LocalDate.now())
+                        .endDate(DiscountUtils.getEndofNextMonthDate(LocalDate.now()))
+                        .discountPercentage(BigDecimal.valueOf(10))
+                        .build()
+        ));
+        Product apple = Product
+                .builder()
+                .productId("Apple")
+                .productUnit("single")
+                .productUnitPrice(BigDecimal.valueOf(.10))
+                .build();
+        shoppingCart.getCart().put(apple, ProductQuantityAndPrice.builder().quantity(2).build());
+        discountService.applyDiscount(shoppingCart);
+        assertEquals(BigDecimal.valueOf(0.18), shoppingCart.getCart().get(apple).getTotalPrice());
+    }
+
+    @Test
+    public void applyDiscount_givenDiscount_AndCheckoutBeforeDiscountStartDate_shouldNotApplyDiscountToCart() {
+        when(discountRepo.getDiscountByProductId("Apple")).thenReturn(Arrays.asList(
+                PercentageDiscount.builder()
+                        .discountedProductId("Apple")
+                        .startDate(LocalDate.now().plusDays(1))
+                        .endDate(DiscountUtils.getEndofNextMonthDate(LocalDate.now()))
+                        .discountPercentage(BigDecimal.valueOf(10))
+                        .build()
+        ));
+        Product apple = Product
+                .builder()
+                .productId("Apple")
+                .productUnit("single")
+                .productUnitPrice(BigDecimal.valueOf(.10))
+                .build();
+        shoppingCart.getCart().put(apple, ProductQuantityAndPrice.builder().quantity(2).build());
+        discountService.applyDiscount(shoppingCart);
+        assertNull(shoppingCart.getCart().get(apple).getTotalPrice());
+    }
+
+    @Test
+    public void applyDiscount_givenDiscount_AndCheckoutAfterDiscountEndDate_shouldNotApplyDiscountToCart() {
+        when(discountRepo.getDiscountByProductId("Apple")).thenReturn(Arrays.asList(
+                PercentageDiscount.builder()
+                        .discountedProductId("Apple")
+                        .startDate(LocalDate.now().minusDays(2))
+                        .endDate(LocalDate.now().minusDays(1))
+                        .discountPercentage(BigDecimal.valueOf(10))
+                        .build()
+        ));
+        Product apple = Product
+                .builder()
+                .productId("Apple")
+                .productUnit("single")
+                .productUnitPrice(BigDecimal.valueOf(.10))
+                .build();
+        shoppingCart.getCart().put(apple, ProductQuantityAndPrice.builder().quantity(2).build());
+        discountService.applyDiscount(shoppingCart);
+        assertNull(shoppingCart.getCart().get(apple).getTotalPrice());
     }
 
 }
