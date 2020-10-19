@@ -11,8 +11,6 @@ import java.time.LocalDate;
 public abstract class Discount {
 
     private String discountedProductId;
-    @NonNull
     private LocalDate startDate;
-    @NonNull
     private LocalDate endDate;
 }
