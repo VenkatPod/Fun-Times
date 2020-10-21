@@ -26,10 +26,7 @@ public class DiscountUtils {
 
     private static BiConsumer<ShoppingCart, Discount> combinationalDiscount() {
         return (shoppingCart, discount) -> {
-            Product discountProduct = shoppingCart.getCart().keySet().stream()
-                    .filter(product -> product.getProductId().equalsIgnoreCase(discount.getDiscountedProductId()))
-                    .findFirst()
-                    .get();
+            Product discountProduct = getDiscountProduct(shoppingCart, discount);
 
             ProductQuantityAndPrice discountProductQuaityAndPrice = shoppingCart.getCart().get(discountProduct);
             discountProductQuaityAndPrice.setTotalPrice(
@@ -60,7 +57,7 @@ public class DiscountUtils {
         };
     }
 
-    private static BigDecimal getTotalPrice(int quantity, BigDecimal productUnitPrice) {
+    public static BigDecimal getTotalPrice(int quantity, BigDecimal productUnitPrice) {
         return productUnitPrice
                 .multiply(BigDecimal.valueOf(quantity));
     }
@@ -82,10 +79,7 @@ public class DiscountUtils {
 
     private static BiConsumer<ShoppingCart, Discount> percentageDiscount() {
         return (shoppingCart, discount) -> {
-            Product discountProduct = shoppingCart.getCart().keySet().stream()
-                    .filter(product -> product.getProductId().equalsIgnoreCase(discount.getDiscountedProductId()))
-                    .findFirst()
-                    .get();
+            Product discountProduct = getDiscountProduct(shoppingCart, discount);
             ProductQuantityAndPrice discountProductQuaityAndPrice = shoppingCart.getCart().get(discountProduct);
             BigDecimal totalPrice = getTotalPrice(
                     discountProductQuaityAndPrice.getQuantity(),
@@ -93,10 +87,14 @@ public class DiscountUtils {
             BigDecimal disCountedPrice = totalPrice
                     .multiply(((PercentageDiscount) discount).getDiscountPercentage())
                     .divide(BigDecimal.valueOf(100));
-            discountProductQuaityAndPrice.setTotalPrice(
-                    getTotalPrice(
-                            discountProductQuaityAndPrice.getQuantity(),
-                            discountProduct.getProductUnitPrice()).subtract(disCountedPrice));
+            discountProductQuaityAndPrice.setTotalPrice(totalPrice.subtract(disCountedPrice));
         };
+    }
+
+    private static Product getDiscountProduct(ShoppingCart shoppingCart, Discount discount) {
+        return shoppingCart.getCart().keySet().stream()
+                .filter(product -> product.getProductId().equalsIgnoreCase(discount.getDiscountedProductId()))
+                .findFirst()
+                .get();
     }
 }
